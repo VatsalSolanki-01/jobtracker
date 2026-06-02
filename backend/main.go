@@ -22,5 +22,11 @@ func main() {
 
 	router.GET("/applications", routes.GetApplications)
 
+	router.GET("/applications/:id", routes.GetApplicationByID)
+
+	router.PUT("/applications/:id", routes.UpdateApplication)
+
+	router.DELETE("/applications/:id", routes.DeleteApplication)
+
 	router.Run(":8081")
 }
