@@ -4,6 +4,7 @@ import { api } from "./api";
 export default function App() {
   const [applications, setApplications] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingApplication, setEditingApplication] = useState(null);
   const [message, setMessage] = useState("");
 
   const [form, setForm] = useState({
@@ -41,11 +42,53 @@ export default function App() {
     });
   };
 
-  const addApplication = async (e) => {
+  const openAddModal = () => {
+    setEditingApplication(null);
+
+    setForm({
+      company_name: "",
+      job_role: "",
+      status: "applied",
+    });
+
+    setShowModal(true);
+  };
+
+  const openEditModal = (application) => {
+    setEditingApplication(application);
+
+    setForm({
+      company_name: application.company_name,
+      job_role: application.job_role,
+      status: application.status,
+    });
+
+    setShowModal(true);
+  };
+
+  const saveApplication = async (e) => {
     e.preventDefault();
 
     try {
-      await api.post("/applications", form);
+      if (editingApplication) {
+        await api.put(
+          `/applications/${editingApplication.id}`,
+          {
+            ...editingApplication,
+            company_name: form.company_name,
+            job_role: form.job_role,
+            status: form.status,
+          }
+        );
+
+        setMessage("Application updated successfully");
+      } else {
+        await api.post("/applications", form);
+
+        setMessage("Application added successfully");
+      }
+
+      setShowModal(false);
 
       setForm({
         company_name: "",
@@ -53,47 +96,31 @@ export default function App() {
         status: "applied",
       });
 
-      setShowModal(false);
-      setMessage("Application added successfully");
-
       loadApplications();
     } catch (error) {
       console.error(error);
-      setMessage("Failed to add application");
+      setMessage("Operation failed");
     }
   };
 
   const deleteApplication = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this application?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     try {
       await api.delete(`/applications/${id}`);
+
       setMessage("Application deleted successfully");
+
       loadApplications();
     } catch (error) {
       console.error(error);
       setMessage("Failed to delete application");
-    }
-  };
-
-  const updateStatus = async (application) => {
-    const currentIndex = statusOptions.indexOf(application.status);
-
-    if (currentIndex === -1 || currentIndex === statusOptions.length - 1) {
-      return;
-    }
-
-    const nextStatus = statusOptions[currentIndex + 1];
-
-    try {
-      await api.put(`/applications/${application.id}`, {
-        ...application,
-        status: nextStatus,
-      });
-
-      setMessage("Status updated successfully");
-      loadApplications();
-    } catch (error) {
-      console.error(error);
-      setMessage("Failed to update application");
     }
   };
 
@@ -104,7 +131,7 @@ export default function App() {
 
         <button
           className="add-btn"
-          onClick={() => setShowModal(true)}
+          onClick={openAddModal}
         >
           Add Application
         </button>
@@ -139,17 +166,22 @@ export default function App() {
                 <td>{application.company_name}</td>
                 <td>{application.job_role}</td>
                 <td>{application.status}</td>
+
                 <td>
                   <button
                     className="update-btn"
-                    onClick={() => updateStatus(application)}
+                    onClick={() =>
+                      openEditModal(application)
+                    }
                   >
-                    Next Status
+                    Edit
                   </button>
 
                   <button
                     className="delete-btn"
-                    onClick={() => deleteApplication(application.id)}
+                    onClick={() =>
+                      deleteApplication(application.id)
+                    }
                   >
                     Delete
                   </button>
@@ -163,9 +195,13 @@ export default function App() {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal">
-            <h2>Add Application</h2>
+            <h2>
+              {editingApplication
+                ? "Edit Application"
+                : "Add Application"}
+            </h2>
 
-            <form onSubmit={addApplication}>
+            <form onSubmit={saveApplication}>
               <input
                 type="text"
                 name="company_name"
@@ -190,7 +226,10 @@ export default function App() {
                 onChange={handleChange}
               >
                 {statusOptions.map((status) => (
-                  <option key={status} value={status}>
+                  <option
+                    key={status}
+                    value={status}
+                  >
                     {status}
                   </option>
                 ))}
@@ -198,7 +237,9 @@ export default function App() {
 
               <div className="modal-actions">
                 <button type="submit">
-                  Save
+                  {editingApplication
+                    ? "Update"
+                    : "Save"}
                 </button>
 
                 <button
