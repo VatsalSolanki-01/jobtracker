@@ -21,6 +21,30 @@ export default function App() {
     "rejected",
   ];
 
+  const stats = {
+    total: applications.length,
+
+    applied: applications.filter(
+      (a) => a.status === "applied"
+    ).length,
+
+    interviewScheduled: applications.filter(
+      (a) => a.status === "interview scheduled"
+    ).length,
+
+    interviewDone: applications.filter(
+      (a) => a.status === "interview done"
+    ).length,
+
+    selected: applications.filter(
+      (a) => a.status === "selected"
+    ).length,
+
+    rejected: applications.filter(
+      (a) => a.status === "rejected"
+    ).length,
+  };
+
   const loadApplications = async () => {
     try {
       const response = await api.get("/applications");
@@ -71,15 +95,12 @@ export default function App() {
 
     try {
       if (editingApplication) {
-        await api.put(
-          `/applications/${editingApplication.id}`,
-          {
-            ...editingApplication,
-            company_name: form.company_name,
-            job_role: form.job_role,
-            status: form.status,
-          }
-        );
+        await api.put(`/applications/${editingApplication.id}`, {
+          ...editingApplication,
+          company_name: form.company_name,
+          job_role: form.job_role,
+          status: form.status,
+        });
 
         setMessage("Application updated successfully");
       } else {
@@ -137,6 +158,38 @@ export default function App() {
         </button>
       </div>
 
+      <div className="stats-grid">
+        <div className="stat-card">
+          <h3>{stats.total}</h3>
+          <p>Total Applications</p>
+        </div>
+
+        <div className="stat-card">
+          <h3>{stats.applied}</h3>
+          <p>Applied</p>
+        </div>
+
+        <div className="stat-card">
+          <h3>{stats.interviewScheduled}</h3>
+          <p>Interview Scheduled</p>
+        </div>
+
+        <div className="stat-card">
+          <h3>{stats.interviewDone}</h3>
+          <p>Interview Done</p>
+        </div>
+
+        <div className="stat-card">
+          <h3>{stats.selected}</h3>
+          <p>Selected</p>
+        </div>
+
+        <div className="stat-card">
+          <h3>{stats.rejected}</h3>
+          <p>Rejected</p>
+        </div>
+      </div>
+
       {message && (
         <div className="message">
           {message}
@@ -170,9 +223,7 @@ export default function App() {
                 <td>
                   <button
                     className="update-btn"
-                    onClick={() =>
-                      openEditModal(application)
-                    }
+                    onClick={() => openEditModal(application)}
                   >
                     Edit
                   </button>
@@ -226,10 +277,7 @@ export default function App() {
                 onChange={handleChange}
               >
                 {statusOptions.map((status) => (
-                  <option
-                    key={status}
-                    value={status}
-                  >
+                  <option key={status} value={status}>
                     {status}
                   </option>
                 ))}
