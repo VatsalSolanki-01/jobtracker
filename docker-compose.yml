@@ -18,8 +18,7 @@ services:
       - mysql_data:/var/lib/mysql
 
   backend:
-    build:
-      context: ./backend
+    image: vatsalsolanki19/jobtracker-backend:latest
 
     container_name: jobtracker-backend
 
@@ -37,8 +36,7 @@ services:
       - mysql
 
   frontend:
-    build:
-      context: ./frontend
+    image: vatsalsolanki19/jobtracker-frontend:latest
 
     container_name: jobtracker-frontend
 
