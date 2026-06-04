@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/VatsalSolanki-01/jobtracker/models"
 	"github.com/joho/godotenv"
@@ -15,11 +16,7 @@ var DB *gorm.DB
 
 func ConnectDB() {
 
-	err := godotenv.Load()
-
-	if err != nil {
-		log.Fatal("Error loading .env")
-	}
+	_ = godotenv.Load()
 
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
@@ -30,13 +27,31 @@ func ConnectDB() {
 		os.Getenv("DB_NAME"),
 	)
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	var err error
 
-	if err != nil {
-		log.Fatalf("Database connection failed: %v", err)
+	for i := 1; i <= 10; i++ {
+
+		DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+
+		if err == nil {
+			log.Println("Database connected successfully")
+			break
+		}
+
+		log.Printf(
+			"Database connection attempt %d failed. Retrying in 5 seconds...",
+			i,
+		)
+
+		time.Sleep(5 * time.Second)
 	}
 
-	DB = db
+	if err != nil {
+		log.Fatalf(
+			"Database connection failed after multiple attempts: %v",
+			err,
+		)
+	}
 
 	err = DB.AutoMigrate(&models.Application{})
 
@@ -44,5 +59,5 @@ func ConnectDB() {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
-	fmt.Println("Database connected successfully")
+	log.Println("Database migration completed successfully")
 }
