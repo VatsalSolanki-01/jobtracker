@@ -40,7 +40,7 @@ pipeline {
             }
         }
 
-        stage('Push Images') {
+        stage('Push Docker Images') {
             steps {
                 sh '''
                     docker push vatsalsolanki19/jobtracker-frontend:latest
@@ -51,14 +51,14 @@ pipeline {
 
         stage('Manual Approval') {
             steps {
-                input message: 'Images pushed successfully. Proceed with deployment?', ok: 'Deploy'
+                input message: 'Docker images pushed successfully. Proceed with deployment?', ok: 'Deploy'
             }
         }
 
         stage('Deploy to Application Server') {
             steps {
                 sh '''
-                    ssh ubuntu@3.214.215.156 "
+                    ssh ubuntu@<YOUR_APP_SERVER_IP> "
                         cd ~/jobtracker &&
                         docker compose pull &&
                         docker compose up -d
@@ -73,7 +73,7 @@ pipeline {
             echo 'Pipeline executed successfully'
         }
         failure {
-            echo 'Pipeline failed - check logs'
+            echo 'Pipeline failed'
         }
     }
 }
