@@ -29,7 +29,7 @@ func ConnectDB() {
 
 	var err error
 
-	for i := 1; i <= 10; i++ {
+	for i := 1; i <= 15; i++ {
 
 		DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
