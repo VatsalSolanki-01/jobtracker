@@ -58,7 +58,7 @@ pipeline {
         stage('Deploy to Application Server') {
             steps {
                 sh '''
-                    ssh ubuntu@<APPLICATION_SERVER_IP> "
+                    ssh ubuntu@3.214.215.156 "
                         cd ~/jobtracker &&
                         docker compose pull &&
                         docker compose up -d
