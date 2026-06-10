@@ -3,13 +3,13 @@ pipeline {
 
     stages {
 
-        stage('checkout scm') {
+        stage('Checkout SCM') {
             steps {
                 git branch: 'main', url: 'https://github.com/VatsalSolanki-01/jobtracker.git'
             }
         }
 
-        stage('frontend-build') {
+        stage('Frontend Build') {
             steps {
                 sh '''
                     docker build -t vatsalsolanki19/jobtracker-frontend:latest ./frontend
@@ -17,7 +17,7 @@ pipeline {
             }
         }
 
-        stage('backend-build') {
+        stage('Backend Build') {
             steps {
                 sh '''
                     docker build -t vatsalsolanki19/jobtracker-backend:latest ./backend
@@ -40,26 +40,40 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push Images') {
             steps {
-                sh 'docker push vatsalsolanki19/jobtracker-frontend:latest'
-                sh 'docker push vatsalsolanki19/jobtracker-backend:latest'
+                sh '''
+                    docker push vatsalsolanki19/jobtracker-frontend:latest
+                    docker push vatsalsolanki19/jobtracker-backend:latest
+                '''
             }
         }
 
         stage('Manual Approval') {
             steps {
-                input(
-                    message: 'Docker images have been pushed successfully. Do you want to continue with deployment?',
-                    ok: 'Deploy'
-                )
+                input message: 'Images pushed successfully. Proceed with deployment?', ok: 'Deploy'
             }
         }
 
-        stage('deploy') {
+        stage('Deploy to Application Server') {
             steps {
-                sh 'docker compose up -d'
+                sh '''
+                    ssh ubuntu@<APPLICATION_SERVER_IP> "
+                        cd ~/jobtracker &&
+                        docker compose pull &&
+                        docker compose up -d
+                    "
+                '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline executed successfully'
+        }
+        failure {
+            echo 'Pipeline failed - check logs'
         }
     }
 }
