@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      name: frontend
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: vatsalsolanki19/jobtracker-frontend:latest
+          env:
+            - name: VITE_API_URL
+              value: http://backend:8081
+          ports:
+            - containerPort: 3000
+              name: frontend
