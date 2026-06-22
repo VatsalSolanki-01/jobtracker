@@ -11,11 +11,13 @@ spec:
       app: nginx
   template:
     metadata:
-      name: nginx
       labels:
         app: nginx
     spec:
       containers:
         - name: nginx
-          image: nginx
+          image: vatsalsolanki19/jobtracker-nginx:latest
+          
+          ports:
+            - containerPort: 80
     
