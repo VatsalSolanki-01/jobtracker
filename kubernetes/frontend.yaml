@@ -22,5 +22,5 @@ spec:
             - name: VITE_API_URL
               value: http://backend:8081
           ports:
-            - containerPort: 3000
+            - containerPort: 4173
               name: frontend
