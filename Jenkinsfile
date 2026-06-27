@@ -56,15 +56,9 @@ pipeline {
 
         stage('Deploy to Application Server') {
             steps {
-                withCredentials([string(credentialsId: 'app-server-ip', variable: 'APP_IP')]) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no ubuntu@$APP_IP "
-                            cd ~/jobtracker &&
-                            docker compose pull &&
-                            docker compose up -d
-                        "
-                    '''
-                }
+                sh '''
+                    kubectl apply -f kubernetes/
+                '''
             }
         }
     }
