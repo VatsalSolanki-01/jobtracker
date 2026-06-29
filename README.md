@@ -1,196 +1,315 @@
-# Job Tracker CI/CD Deployment Pipeline
+# JobTracker CI/CD Pipeline with Kubernetes
 
-A hands-on DevOps project that demonstrates how a modern application can be automatically built, containerized, published, and deployed using AWS, Jenkins, Docker, and Docker Compose.
-
----
-
-# What This Project Does
-
-This project builds a complete CI/CD pipeline for a containerized Job Tracker application consisting of a React frontend, Go backend, and MySQL database.
-
-Developers push code to GitHub, Jenkins automatically pulls the latest source code, builds Docker images, pushes them to Docker Hub, and deploys the updated application to a remote application server.
-
-This setup simulates how real-world DevOps teams automate application delivery and deployments across environments.
+A production inspired DevOps project demonstrating an end to end CI/CD pipeline for deploying a multi tier application to Kubernetes using Jenkins, Docker, Docker Hub, and Minikube.
 
 ---
 
-# How It Helps / Problems It Solves
+# Overview
 
-Manual deployments are time-consuming, error-prone, and difficult to scale. Every deployment requires building applications, transferring artifacts, updating servers, and restarting services.
+JobTracker is a containerized web application consisting of a React frontend, Go backend, MySQL database, and Nginx reverse proxy.
 
-My project solves these challenges by enabling:
+The project demonstrates how modern DevOps teams automate software delivery using Jenkins pipelines and Kubernetes.
 
-• Automated application builds through Jenkins Pipelines  
-• Consistent deployments using Docker containers  
-• Centralized image storage with Docker Hub  
-• Remote deployment through secure SSH connectivity  
-• Rapid application updates with minimal manual intervention  
-• Reproducible environments using Docker Compose  
-• Simplified application management across infrastructure  
-
-This type of CI/CD workflow helps teams deliver software faster, reduce deployment errors, and improve operational efficiency.
+Whenever code is pushed to GitHub, Jenkins automatically builds Docker images, pushes them to Docker Hub, and deploys the latest version of the application to a Kubernetes cluster.
 
 ---
 
-# Architecture Diagram
+# Project Goals
 
-                +----------------------+
-                |       GitHub         |
-                |----------------------|
-                | Source Code          |
-                +----------+-----------+
-                           |
-                           | Git Pull
-                           v
-                +----------------------+
-                |   Jenkins Server     |
-                |----------------------|
-                | Jenkins Pipeline     |
-                | Docker Build         |
-                | Docker Push          |
-                +----------+-----------+
-                           |
-                           | Push Images
-                           v
-                +----------------------+
-                |     Docker Hub       |
-                |----------------------|
-                | Frontend Image       |
-                | Backend Image        |
-                +----------+-----------+
-                           |
-                           | Docker Pull
-                           v
-                +----------------------+
-                | Application Server   |
-                |----------------------|
-                | Docker Compose       |
-                | Frontend Container   |
-                | Backend Container    |
-                | MySQL Container      |
-                +----------------------+
+This project demonstrates practical implementation of:
 
-### Flow
+• CI/CD pipeline automation
 
-1. Developer pushes code to GitHub.
-2. Jenkins pulls the latest source code.
-3. Jenkins builds frontend and backend Docker images.
-4. Jenkins pushes images to Docker Hub.
-5. Jenkins connects to the Application Server through SSH.
-6. Docker Compose pulls the latest images.
-7. Containers are recreated automatically.
-8. Updated application becomes available to users.
+• Docker image creation and version management
+
+• Kubernetes Deployments and Services
+
+• Container orchestration
+
+• Rolling application updates
+
+• Infrastructure automation
+
+• Production style application deployment
+
+---
+
+# Architecture
+
+> Insert architecture diagram here.
+
+The deployment architecture consists of:
+
+Developer
+
+↓
+
+GitHub
+
+↓
+
+Jenkins Pipeline
+
+↓
+
+Docker Hub
+
+↓
+
+Kubernetes Cluster (Minikube)
+
+↓
+
+Frontend
+
+Backend
+
+MySQL
+
+Nginx
+
+---
+
+# CI/CD Pipeline
+
+## Source Stage
+
+• Pull latest source code from GitHub
+
+## Build Stage
+
+• Build React frontend Docker image
+
+• Build Go backend Docker image
+
+## Registry Stage
+
+• Authenticate with Docker Hub
+
+• Push frontend image
+
+• Push backend image
+
+## Approval Stage
+
+• Manual deployment approval
+
+## Deployment Stage
+
+• Apply Kubernetes manifests
+
+• Create or update Deployments
+
+• Create or update Services
+
+• Perform rolling updates automatically
+
+---
+
+# Kubernetes Architecture
+
+The application runs inside a Kubernetes cluster using the following workloads.
+
+## Frontend
+
+Deployment
+
+Replicas: 3
+
+Service
+
+ClusterIP
+
+---
+
+## Backend
+
+Deployment
+
+Replicas: 3
+
+Service
+
+ClusterIP
+
+---
+
+## MySQL
+
+Deployment
+
+Replicas: 1
+
+Service
+
+ClusterIP
+
+---
+
+## Nginx
+
+Deployment
+
+Replicas: 2
+
+Service
+
+NodePort
+
+---
+
+# Kubernetes Resources
+
+The project includes Kubernetes manifests for:
+
+• Deployments
+
+• ReplicaSets (managed by Deployments)
+
+• Pods
+
+• Services
+
+These manifests allow Kubernetes to automatically maintain the desired application state.
 
 ---
 
 # Tech Stack
 
-| Tool | Logo |
-|--------|--------|
-| AWS EC2 | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/amazonwebservices/amazonwebservices-original-wordmark.svg" width="40"/> |
-| Jenkins | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jenkins/jenkins-original.svg" width="40"/> |
-| Docker | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg" width="40"/> |
-| Docker Compose | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg" width="40"/> |
-| Docker Hub | <img src="https://www.docker.com/wp-content/uploads/2022/03/Moby-logo.png" width="40"/> |
-| Go | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/go/go-original.svg" width="40"/> |
-| React | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" width="40"/> |
-| MySQL | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg" width="40"/> |
-| Linux | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" width="40"/> |
-| GitHub | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" width="40"/> |
+| Technology | Purpose                                          |
+| ---------- | ------------------------------------------------ |
+| GitHub     | Source Control                                   |
+| Jenkins    | Continuous Integration and Continuous Deployment |
+| Docker     | Containerization                                 |
+| Docker Hub | Image Registry                                   |
+| Kubernetes | Container Orchestration                          |
+| Minikube   | Local Kubernetes Cluster                         |
+| React      | Frontend                                         |
+| Go         | Backend API                                      |
+| Gin        | HTTP Framework                                   |
+| MySQL      | Database                                         |
+| Nginx      | Reverse Proxy                                    |
+| Linux      | Host Operating System                            |
+
+---
+
+# Repository Structure
+
+```
+.
+├── backend/
+├── frontend/
+├── kubernetes/
+│   ├── frontend.yaml
+│   ├── frontend-service.yaml
+│   ├── backend.yaml
+│   ├── backend-service.yaml
+│   ├── mysql.yaml
+│   ├── mysql-service.yaml
+│   ├── nginx.yaml
+│   └── nginx-service.yaml
+├── Jenkinsfile
+└── README.md
+```
 
 ---
 
 # Application Features
 
-### Frontend
+## Frontend
 
-• View job applications  
-• Add new applications  
-• Update existing applications  
-• Delete applications  
-• Dashboard statistics  
+• Dashboard
 
-### Backend
+• Create job applications
 
-• RESTful API built with Go and Gin  
-• CRUD operations for job applications  
-• MySQL database integration  
-• Health check endpoint  
+• Update job applications
 
-### Database
+• Delete job applications
 
-• Persistent MySQL storage  
-• Automatic table creation through GORM migrations  
+• View application statistics
 
----
+## Backend
 
-# CI/CD Pipeline Stages
+• REST API built with Go and Gin
 
-### Source Control
+• CRUD operations
 
-• Pull latest code from GitHub
+• MySQL integration
 
-### Build Stage
+• Health endpoint
 
-• Build React frontend Docker image  
-• Build Go backend Docker image
+## Database
 
-### Registry Stage
+• Persistent MySQL storage
 
-• Authenticate with Docker Hub  
-• Push frontend image  
-• Push backend image
-
-### Deployment Stage
-
-• SSH into Application Server  
-• Pull latest images  
-• Recreate containers using Docker Compose
-
-### Verification Stage
-
-• Validate frontend accessibility  
-• Validate backend health endpoint  
-• Verify CRUD operations
+• Automatic schema creation using GORM
 
 ---
 
-# Infrastructure
+# Project Highlights
 
-### Jenkins Server
+• Automated CI/CD pipeline using Jenkins
 
-Responsible for:
+• Multi container application deployed on Kubernetes
 
-• Running CI/CD pipelines  
-• Building Docker images  
-• Pushing images to Docker Hub  
-• Deploying applications remotely
+• Docker image management using Docker Hub
 
-### Application Server
+• Kubernetes Deployments with multiple replicas
 
-Responsible for:
+• Kubernetes Services for internal communication
 
-• Running application containers  
-• Hosting frontend service  
-• Hosting backend service  
-• Hosting MySQL database
+• Rolling deployments using kubectl
+
+• Infrastructure defined as code using Kubernetes manifests
 
 ---
 
-# Project Outcomes
+# Future Improvements
 
-• Automated end-to-end deployment pipeline
+• Deploy to Amazon EKS
 
-• Containerized multi-tier application
+• Configure Ingress Controller
 
-• Remote deployment using Jenkins and SSH
+• External DNS
 
-• Docker image management through Docker Hub
+• TLS using cert-manager
 
-• Infrastructure hosted on AWS EC2
+• ConfigMaps
 
-• Practical implementation of DevOps CI/CD concepts
+• Kubernetes Secrets
+
+• Horizontal Pod Autoscaler
+
+• Monitoring using Prometheus and Grafana
+
+• Centralized logging using Loki
 
 ---
 
-Automating software delivery from code commit to production deployment.
+# Learning Outcomes
+
+Through this project I gained practical experience with:
+
+• Jenkins Pipelines
+
+• Docker image lifecycle
+
+• Kubernetes Deployments
+
+• ReplicaSets
+
+• Pods
+
+• Services
+
+• Rolling updates
+
+• Kubernetes networking
+
+• CI/CD automation
+
+• Container orchestration
+
+---
+
+Automating software delivery from code commit to Kubernetes deployment.
