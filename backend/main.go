@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/VatsalSolanki-01/jobtracker/config"
+	"github.com/VatsalSolanki-01/jobtracker/middleware"
 	"github.com/VatsalSolanki-01/jobtracker/routes"
 
 	"github.com/gin-contrib/cors"
@@ -16,11 +17,14 @@ func main() {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
-		AllowAllOrigins: true,
+		AllowOrigins: []string{
+			"http://localhost:5173",
+			"http://localhost:3000",
+		},
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders: []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		AllowCredentials: false,
-		MaxAge:           12 * time.Hour,
+		MaxAge: 12 * time.Hour,
 	}))
 
 	router.GET("/health", func(c *gin.Context) {
@@ -29,16 +33,21 @@ func main() {
 		})
 	})
 
-	// Auth routes
-	router.POST("/auth/register", routes.Register)
-	router.POST("/auth/login", routes.Login)
+	authRoutes := router.Group("/auth")
+	{
+		authRoutes.POST("/register", routes.Register)
+		authRoutes.POST("/login", routes.Login)
+	}
 
-	// Application routes
-	router.POST("/applications", routes.CreateApplication)
-	router.GET("/applications", routes.GetApplications)
-	router.GET("/applications/:id", routes.GetApplicationByID)
-	router.PUT("/applications/:id", routes.UpdateApplication)
-	router.DELETE("/applications/:id", routes.DeleteApplication)
+	applicationRoutes := router.Group("/applications")
+	applicationRoutes.Use(middleware.AuthMiddleware())
+	{
+		applicationRoutes.POST("", routes.CreateApplication)
+		applicationRoutes.GET("", routes.GetApplications)
+		applicationRoutes.GET("/:id", routes.GetApplicationByID)
+		applicationRoutes.PUT("/:id", routes.UpdateApplication)
+		applicationRoutes.DELETE("/:id", routes.DeleteApplication)
+	}
 
 	router.Run(":8081")
 }

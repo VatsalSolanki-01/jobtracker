@@ -1,28 +1,77 @@
 package routes
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/VatsalSolanki-01/jobtracker/config"
 	"github.com/VatsalSolanki-01/jobtracker/models"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
+type ApplicationInput struct {
+	CompanyName string `json:"company_name"`
+	JobRole     string `json:"job_role"`
+	Status      string `json:"status"`
+}
+
+func getUserIDFromContext(c *gin.Context) (uint, bool) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "User information missing in request context",
+		})
+		return 0, false
+	}
+
+	userID, ok := userIDValue.(uint)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Invalid user information in request context",
+		})
+		return 0, false
+	}
+
+	return userID, true
+}
+
 func CreateApplication(c *gin.Context) {
+	userID, ok := getUserIDFromContext(c)
+	if !ok {
+		return
+	}
 
-	var application models.Application
+	var input ApplicationInput
 
-	if err := c.ShouldBindJSON(&application); err != nil {
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request body",
 		})
 		return
 	}
 
-	result := config.DB.Create(&application)
+	input.CompanyName = strings.TrimSpace(input.CompanyName)
+	input.JobRole = strings.TrimSpace(input.JobRole)
+	input.Status = strings.TrimSpace(strings.ToLower(input.Status))
 
-	if result.Error != nil {
+	if input.CompanyName == "" || input.JobRole == "" || input.Status == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Company name, job role, and status are required",
+		})
+		return
+	}
+
+	application := models.Application{
+		CompanyName: input.CompanyName,
+		JobRole:     input.JobRole,
+		Status:      input.Status,
+		UserID:      userID,
+	}
+
+	if err := config.DB.Create(&application).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to save application",
 		})
@@ -33,12 +82,17 @@ func CreateApplication(c *gin.Context) {
 }
 
 func GetApplications(c *gin.Context) {
+	userID, ok := getUserIDFromContext(c)
+	if !ok {
+		return
+	}
 
 	var applications []models.Application
 
-	result := config.DB.Find(&applications)
-
-	if result.Error != nil {
+	if err := config.DB.
+		Where("user_id = ?", userID).
+		Order("id DESC").
+		Find(&applications).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch applications",
 		})
@@ -49,23 +103,35 @@ func GetApplications(c *gin.Context) {
 }
 
 func GetApplicationByID(c *gin.Context) {
+	userID, ok := getUserIDFromContext(c)
+	if !ok {
+		return
+	}
 
 	id, err := strconv.Atoi(c.Param("id"))
-
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid ID",
+			"error": "Invalid application ID",
 		})
 		return
 	}
 
 	var application models.Application
 
-	result := config.DB.First(&application, id)
+	err = config.DB.
+		Where("id = ? AND user_id = ?", id, userID).
+		First(&application).Error
 
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Application not found",
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Application not found",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to fetch application",
 		})
 		return
 	}
@@ -74,68 +140,113 @@ func GetApplicationByID(c *gin.Context) {
 }
 
 func UpdateApplication(c *gin.Context) {
+	userID, ok := getUserIDFromContext(c)
+	if !ok {
+		return
+	}
 
 	id, err := strconv.Atoi(c.Param("id"))
-
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid ID",
+			"error": "Invalid application ID",
 		})
 		return
 	}
 
 	var application models.Application
 
-	result := config.DB.First(&application, id)
+	err = config.DB.
+		Where("id = ? AND user_id = ?", id, userID).
+		First(&application).Error
 
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Application not found",
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Application not found",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to fetch application",
 		})
 		return
 	}
 
-	var updatedApplication models.Application
+	var input ApplicationInput
 
-	if err := c.ShouldBindJSON(&updatedApplication); err != nil {
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request body",
 		})
 		return
 	}
 
-	application.CompanyName = updatedApplication.CompanyName
-	application.JobRole = updatedApplication.JobRole
-	application.Status = updatedApplication.Status
+	input.CompanyName = strings.TrimSpace(input.CompanyName)
+	input.JobRole = strings.TrimSpace(input.JobRole)
+	input.Status = strings.TrimSpace(strings.ToLower(input.Status))
 
-	config.DB.Save(&application)
+	if input.CompanyName == "" || input.JobRole == "" || input.Status == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Company name, job role, and status are required",
+		})
+		return
+	}
+
+	application.CompanyName = input.CompanyName
+	application.JobRole = input.JobRole
+	application.Status = input.Status
+
+	if err := config.DB.Save(&application).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to update application",
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, application)
 }
 
 func DeleteApplication(c *gin.Context) {
+	userID, ok := getUserIDFromContext(c)
+	if !ok {
+		return
+	}
 
 	id, err := strconv.Atoi(c.Param("id"))
-
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid ID",
+			"error": "Invalid application ID",
 		})
 		return
 	}
 
 	var application models.Application
 
-	result := config.DB.First(&application, id)
+	err = config.DB.
+		Where("id = ? AND user_id = ?", id, userID).
+		First(&application).Error
 
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Application not found",
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Application not found",
+			})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to fetch application",
 		})
 		return
 	}
 
-	config.DB.Delete(&application)
+	if err := config.DB.Delete(&application).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to delete application",
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Application deleted successfully",

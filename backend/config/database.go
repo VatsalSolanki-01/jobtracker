@@ -40,23 +40,23 @@ func ConnectDB() {
 			continue
 		}
 
-		sqlDB, err := DB.DB()
-		if err != nil {
+		sqlDB, sqlErr := DB.DB()
+		if sqlErr != nil {
 			log.Printf(
 				"Database connection attempt %d failed while getting sql.DB: %v. Retrying in 5 seconds...",
 				i,
-				err,
+				sqlErr,
 			)
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
-		err = sqlDB.Ping()
-		if err != nil {
+		pingErr := sqlDB.Ping()
+		if pingErr != nil {
 			log.Printf(
 				"Database connection attempt %d failed while pinging DB: %v. Retrying in 5 seconds...",
 				i,
-				err,
+				pingErr,
 			)
 			time.Sleep(5 * time.Second)
 			continue
@@ -67,10 +67,7 @@ func ConnectDB() {
 	}
 
 	if err != nil {
-		log.Fatalf(
-			"Database connection failed after multiple attempts: %v",
-			err,
-		)
+		log.Fatalf("Database connection failed after multiple attempts: %v", err)
 	}
 
 	err = DB.AutoMigrate(
