@@ -15,7 +15,6 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() {
-
 	_ = godotenv.Load()
 
 	dsn := fmt.Sprintf(
@@ -30,20 +29,41 @@ func ConnectDB() {
 	var err error
 
 	for i := 1; i <= 15; i++ {
-
 		DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
-
-		if err == nil {
-			log.Println("Database connected successfully")
-			break
+		if err != nil {
+			log.Printf(
+				"Database connection attempt %d failed while opening DB: %v. Retrying in 5 seconds...",
+				i,
+				err,
+			)
+			time.Sleep(5 * time.Second)
+			continue
 		}
 
-		log.Printf(
-			"Database connection attempt %d failed. Retrying in 5 seconds...",
-			i,
-		)
+		sqlDB, err := DB.DB()
+		if err != nil {
+			log.Printf(
+				"Database connection attempt %d failed while getting sql.DB: %v. Retrying in 5 seconds...",
+				i,
+				err,
+			)
+			time.Sleep(5 * time.Second)
+			continue
+		}
 
-		time.Sleep(5 * time.Second)
+		err = sqlDB.Ping()
+		if err != nil {
+			log.Printf(
+				"Database connection attempt %d failed while pinging DB: %v. Retrying in 5 seconds...",
+				i,
+				err,
+			)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		log.Println("Database connected successfully")
+		break
 	}
 
 	if err != nil {
@@ -53,7 +73,10 @@ func ConnectDB() {
 		)
 	}
 
-	err = DB.AutoMigrate(&models.Application{})
+	err = DB.AutoMigrate(
+		&models.User{},
+		&models.Application{},
+	)
 
 	if err != nil {
 		log.Fatalf("Migration failed: %v", err)
