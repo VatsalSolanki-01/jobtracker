@@ -2,10 +2,107 @@ body {
   margin: 0;
   font-family: Arial, sans-serif;
   background-color: #f5f7fa;
+  color: #111827;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+/* AUTH */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  padding: 32px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.auth-card h1 {
+  margin: 0 0 10px;
+  text-align: center;
+}
+
+.auth-subtitle {
+  margin: 0 0 24px;
+  text-align: center;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  flex: 1;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.active-tab {
+  background: #111827;
+  color: white;
+  border-color: #111827;
+}
+
+.auth-form input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.auth-submit-btn {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.auth-footer-text {
+  margin-top: 16px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.inline-switch-btn {
+  background: transparent;
+  color: #111827;
+  padding: 0;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* DASHBOARD */
+
 .container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 40px auto;
   padding: 20px;
 }
@@ -15,49 +112,78 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 25px;
+  gap: 20px;
 }
 
-h1 {
+.header h1 {
   margin: 0;
 }
 
-.add-btn {
-  background-color: #222;
+.welcome-text {
+  margin: 6px 0 0;
+  color: #6b7280;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.add-btn,
+.primary-btn {
+  background-color: #111827;
   color: white;
+}
+
+.logout-btn {
+  background: #e5e7eb;
+  color: #111827;
 }
 
 .message {
   margin-bottom: 15px;
-  padding: 10px;
+  padding: 12px;
   background-color: #eef6ee;
   border: 1px solid #c7e5c7;
+  border-radius: 6px;
+}
+
+.error-message {
+  background-color: #fff1f2;
+  border-color: #fecdd3;
+  color: #b42318;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
   background: white;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 th,
 td {
   padding: 14px;
   text-align: left;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 th {
-  background-color: #f0f0f0;
+  background-color: #f3f4f6;
 }
 
 button {
   border: none;
   padding: 8px 12px;
   cursor: pointer;
+  border-radius: 6px;
 }
 
 .update-btn {
   margin-right: 8px;
+  background: #f3f4f6;
 }
 
 .delete-btn {
@@ -72,25 +198,25 @@ button {
 
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0, 0, 0, 0.45);
-
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 20px;
 }
 
 .modal {
-  width: 400px;
+  width: 100%;
+  max-width: 420px;
   background: white;
   padding: 25px;
+  border-radius: 10px;
 }
 
 .modal h2 {
   margin-top: 0;
+  margin-bottom: 16px;
 }
 
 .modal input,
@@ -99,6 +225,8 @@ button {
   padding: 10px;
   margin-bottom: 12px;
   box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
 }
 
 .modal-actions {
@@ -120,10 +248,10 @@ button {
 
 .stat-card {
   background: white;
-  border: 1px solid #e5e5e5;
+  border: 1px solid #e5e7eb;
   padding: 15px;
   text-align: center;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .stat-card h3 {
@@ -134,4 +262,35 @@ button {
 .stat-card p {
   margin-top: 8px;
   color: #666;
+}
+
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    margin: 20px auto;
+    padding: 16px;
+  }
+
+  .auth-card {
+    padding: 24px;
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+  }
 }
