@@ -1,3 +1,12 @@
+function getTodayDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function ApplicationModal({
   form,
   setForm,
@@ -5,21 +14,13 @@ export default function ApplicationModal({
   onSubmit,
   onClose,
 }) {
-  const statusOptions = [
-    "applied",
-    "interview scheduled",
-    "interview done",
-    "selected",
-    "rejected",
-  ];
+  const today = getTodayDate();
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
 
   return (
@@ -53,27 +54,24 @@ export default function ApplicationModal({
             value={form.status}
             onChange={handleChange}
           >
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
+            <option value="applied">applied</option>
+            <option value="interview scheduled">interview scheduled</option>
+            <option value="interview done">interview done</option>
+            <option value="selected">selected</option>
+            <option value="rejected">rejected</option>
           </select>
 
-          <div className="date-field-group">
-            <label htmlFor="applied_date">Application Date</label>
-            <input
-              id="applied_date"
-              type="date"
-              name="applied_date"
-              value={form.applied_date}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <input
+            type="date"
+            name="applied_date"
+            value={form.applied_date}
+            onChange={handleChange}
+            max={today}
+            required
+          />
 
           <div className="modal-actions">
-            <button type="submit" className="primary-btn">
+            <button type="submit">
               {editingApplication ? "Update" : "Save"}
             </button>
 
