@@ -102,7 +102,7 @@ select {
 /* DASHBOARD */
 
 .container {
-  max-width: 1100px;
+  max-width: 1150px;
   margin: 40px auto;
   padding: 20px;
 }
@@ -168,10 +168,12 @@ td {
   padding: 14px;
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
 }
 
 th {
   background-color: #f3f4f6;
+  white-space: nowrap;
 }
 
 button {
@@ -208,7 +210,7 @@ button {
 
 .modal {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   background: white;
   padding: 25px;
   border-radius: 10px;
@@ -232,11 +234,23 @@ button {
 .modal-actions {
   display: flex;
   gap: 10px;
+  margin-top: 8px;
 }
 
 .cancel-btn {
   background-color: #777;
   color: white;
+}
+
+.date-field-group {
+  margin-bottom: 12px;
+}
+
+.date-field-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
 }
 
 .stats-grid {

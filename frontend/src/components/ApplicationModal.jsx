@@ -14,10 +14,12 @@ export default function ApplicationModal({
   ];
 
   const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   return (
@@ -50,7 +52,6 @@ export default function ApplicationModal({
             name="status"
             value={form.status}
             onChange={handleChange}
-            required
           >
             {statusOptions.map((status) => (
               <option key={status} value={status}>
@@ -59,13 +60,17 @@ export default function ApplicationModal({
             ))}
           </select>
 
-          <input
-            type="date"
-            name="applied_date"
-            value={form.applied_date}
-            onChange={handleChange}
-            required
-          />
+          <div className="date-field-group">
+            <label htmlFor="applied_date">Application Date</label>
+            <input
+              id="applied_date"
+              type="date"
+              name="applied_date"
+              value={form.applied_date}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
           <div className="modal-actions">
             <button type="submit" className="primary-btn">
