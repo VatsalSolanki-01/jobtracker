@@ -50,6 +50,7 @@ export default function ApplicationModal({
             name="status"
             value={form.status}
             onChange={handleChange}
+            required
           >
             {statusOptions.map((status) => (
               <option key={status} value={status}>
@@ -57,6 +58,14 @@ export default function ApplicationModal({
               </option>
             ))}
           </select>
+
+          <input
+            type="date"
+            name="applied_date"
+            value={form.applied_date}
+            onChange={handleChange}
+            required
+          />
 
           <div className="modal-actions">
             <button type="submit" className="primary-btn">

@@ -12,6 +12,7 @@ export default function Dashboard({ user, onLogout }) {
     company_name: "",
     job_role: "",
     status: "applied",
+    applied_date: "",
   });
 
   const loadApplications = async () => {
@@ -34,11 +35,14 @@ export default function Dashboard({ user, onLogout }) {
 
   const openAddModal = () => {
     setEditingApplication(null);
+
     setForm({
       company_name: "",
       job_role: "",
       status: "applied",
+      applied_date: "",
     });
+
     setShowModal(true);
   };
 
@@ -46,9 +50,10 @@ export default function Dashboard({ user, onLogout }) {
     setEditingApplication(application);
 
     setForm({
-      company_name: application.company_name,
-      job_role: application.job_role,
-      status: application.status,
+      company_name: application.company_name || "",
+      job_role: application.job_role || "",
+      status: application.status || "applied",
+      applied_date: formatDateForInput(application.applied_date),
     });
 
     setShowModal(true);
@@ -57,10 +62,12 @@ export default function Dashboard({ user, onLogout }) {
   const closeModal = () => {
     setShowModal(false);
     setEditingApplication(null);
+
     setForm({
       company_name: "",
       job_role: "",
       status: "applied",
+      applied_date: "",
     });
   };
 
@@ -72,10 +79,16 @@ export default function Dashboard({ user, onLogout }) {
       company_name: form.company_name.trim(),
       job_role: form.job_role.trim(),
       status: form.status,
+      applied_date: form.applied_date,
     };
 
-    if (!payload.company_name || !payload.job_role || !payload.status) {
-      setMessage("Company name, job role, and status are required");
+    if (
+      !payload.company_name ||
+      !payload.job_role ||
+      !payload.status ||
+      !payload.applied_date
+    ) {
+      setMessage("Company name, job role, status, and applied date are required");
       return;
     }
 
@@ -134,6 +147,58 @@ export default function Dashboard({ user, onLogout }) {
     ).length,
     selected: applications.filter((a) => a.status === "selected").length,
     rejected: applications.filter((a) => a.status === "rejected").length,
+  };
+
+  const formatDateForInput = (dateString) => {
+    if (!dateString) {
+      return "";
+    }
+
+    const date = new Date(dateString);
+
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+
+    return date.toISOString().split("T")[0];
+  };
+
+  const formatDisplayDate = (dateString) => {
+    if (!dateString) {
+      return "-";
+    }
+
+    const date = new Date(dateString);
+
+    if (Number.isNaN(date.getTime())) {
+      return "-";
+    }
+
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatDisplayDateTime = (dateString) => {
+    if (!dateString) {
+      return "-";
+    }
+
+    const date = new Date(dateString);
+
+    if (Number.isNaN(date.getTime())) {
+      return "-";
+    }
+
+    return date.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -195,6 +260,8 @@ export default function Dashboard({ user, onLogout }) {
             <th>Company</th>
             <th>Role</th>
             <th>Status</th>
+            <th>Applied Date</th>
+            <th>Last Updated</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -202,7 +269,7 @@ export default function Dashboard({ user, onLogout }) {
         <tbody>
           {applications.length === 0 ? (
             <tr>
-              <td colSpan="4" className="empty-row">
+              <td colSpan="6" className="empty-row">
                 No applications found
               </td>
             </tr>
@@ -212,6 +279,8 @@ export default function Dashboard({ user, onLogout }) {
                 <td>{application.company_name}</td>
                 <td>{application.job_role}</td>
                 <td>{application.status}</td>
+                <td>{formatDisplayDate(application.applied_date)}</td>
+                <td>{formatDisplayDateTime(application.updated_at)}</td>
                 <td>
                   <button
                     className="update-btn"
