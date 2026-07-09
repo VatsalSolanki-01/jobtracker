@@ -21,6 +21,7 @@ export default function Dashboard({ user, onLogout }) {
   const [editingApplication, setEditingApplication] = useState(null);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("newest");
 
   const [form, setForm] = useState({
     company_name: "",
@@ -29,12 +30,19 @@ export default function Dashboard({ user, onLogout }) {
     applied_date: "",
   });
 
-  const loadApplications = async (searchValue = "") => {
+  const loadApplications = async (
+    searchValue = searchTerm,
+    sortValue = sortOption
+  ) => {
     try {
       const params = {};
 
       if (searchValue.trim()) {
         params.search = searchValue.trim();
+      }
+
+      if (sortValue) {
+        params.sort = sortValue;
       }
 
       const response = await api.get("/applications", { params });
@@ -51,11 +59,11 @@ export default function Dashboard({ user, onLogout }) {
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      loadApplications(searchTerm);
+      loadApplications(searchTerm, sortOption);
     }, 400);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  }, [searchTerm, sortOption]);
 
   const openAddModal = () => {
     setEditingApplication(null);
@@ -128,7 +136,7 @@ export default function Dashboard({ user, onLogout }) {
       }
 
       closeModal();
-      loadApplications(searchTerm);
+      loadApplications(searchTerm, sortOption);
     } catch (error) {
       console.error(error);
 
@@ -151,7 +159,7 @@ export default function Dashboard({ user, onLogout }) {
     try {
       await api.delete(`/applications/${id}`);
       setMessage("Application deleted successfully");
-      loadApplications(searchTerm);
+      loadApplications(searchTerm, sortOption);
     } catch (error) {
       console.error(error);
 
@@ -202,6 +210,17 @@ export default function Dashboard({ user, onLogout }) {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
+
+        <select
+          className="sort-select"
+          value={sortOption}
+          onChange={(e) => setSortOption(e.target.value)}
+        >
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="company_asc">Company A-Z</option>
+          <option value="company_desc">Company Z-A</option>
+        </select>
       </div>
 
       <div className="stats-grid">

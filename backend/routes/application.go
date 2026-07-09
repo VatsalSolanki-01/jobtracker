@@ -110,15 +110,14 @@ func GetApplications(c *gin.Context) {
 	}
 
 	search := strings.TrimSpace(c.Query("search"))
+	sortBy := strings.TrimSpace(c.Query("sort"))
 
 	var applications []models.Application
 
-	query := config.DB.
-		Where("user_id = ?", userID)
+	query := config.DB.Where("user_id = ?", userID)
 
 	if search != "" {
 		searchPattern := "%" + strings.ToLower(search) + "%"
-
 		query = query.Where(
 			"(LOWER(company_name) LIKE ? OR LOWER(job_role) LIKE ?)",
 			searchPattern,
@@ -126,11 +125,18 @@ func GetApplications(c *gin.Context) {
 		)
 	}
 
-	result := query.
-		Order("applied_date desc").
-		Find(&applications)
+	switch sortBy {
+	case "oldest":
+		query = query.Order("applied_date asc")
+	case "company_asc":
+		query = query.Order("LOWER(company_name) asc")
+	case "company_desc":
+		query = query.Order("LOWER(company_name) desc")
+	default:
+		query = query.Order("applied_date desc")
+	}
 
-	if result.Error != nil {
+	if err := query.Find(&applications).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch applications",
 		})
