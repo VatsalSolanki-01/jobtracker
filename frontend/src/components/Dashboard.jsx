@@ -20,6 +20,7 @@ export default function Dashboard({ user, onLogout }) {
   const [showModal, setShowModal] = useState(false);
   const [editingApplication, setEditingApplication] = useState(null);
   const [message, setMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [form, setForm] = useState({
     company_name: "",
@@ -28,9 +29,15 @@ export default function Dashboard({ user, onLogout }) {
     applied_date: "",
   });
 
-  const loadApplications = async () => {
+  const loadApplications = async (searchValue = "") => {
     try {
-      const response = await api.get("/applications");
+      const params = {};
+
+      if (searchValue.trim()) {
+        params.search = searchValue.trim();
+      }
+
+      const response = await api.get("/applications", { params });
       setApplications(response.data);
     } catch (error) {
       console.error(error);
@@ -43,8 +50,12 @@ export default function Dashboard({ user, onLogout }) {
   };
 
   useEffect(() => {
-    loadApplications();
-  }, []);
+    const timeoutId = setTimeout(() => {
+      loadApplications(searchTerm);
+    }, 400);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   const openAddModal = () => {
     setEditingApplication(null);
@@ -117,7 +128,7 @@ export default function Dashboard({ user, onLogout }) {
       }
 
       closeModal();
-      loadApplications();
+      loadApplications(searchTerm);
     } catch (error) {
       console.error(error);
 
@@ -140,7 +151,7 @@ export default function Dashboard({ user, onLogout }) {
     try {
       await api.delete(`/applications/${id}`);
       setMessage("Application deleted successfully");
-      loadApplications();
+      loadApplications(searchTerm);
     } catch (error) {
       console.error(error);
 
@@ -181,6 +192,16 @@ export default function Dashboard({ user, onLogout }) {
             Logout
           </button>
         </div>
+      </div>
+
+      <div className="toolbar">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Search by company or role"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <div className="stats-grid">

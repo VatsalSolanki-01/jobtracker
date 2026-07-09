@@ -308,3 +308,16 @@ button {
     overflow-x: auto;
   }
 }
+
+.toolbar {
+  margin-bottom: 20px;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 360px;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+}

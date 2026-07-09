@@ -64,6 +64,16 @@ func CreateApplication(c *gin.Context) {
 		return
 	}
 
+	today := time.Now().Truncate(24 * time.Hour)
+	selectedDate := appliedDate.Truncate(24 * time.Hour)
+
+	if selectedDate.After(today) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Application date cannot be in the future",
+		})
+		return
+	}
+
 	application := models.Application{
 		CompanyName: input.CompanyName,
 		JobRole:     input.JobRole,
@@ -99,10 +109,24 @@ func GetApplications(c *gin.Context) {
 		return
 	}
 
+	search := strings.TrimSpace(c.Query("search"))
+
 	var applications []models.Application
 
-	result := config.DB.
-		Where("user_id = ?", userID).
+	query := config.DB.
+		Where("user_id = ?", userID)
+
+	if search != "" {
+		searchPattern := "%" + strings.ToLower(search) + "%"
+
+		query = query.Where(
+			"(LOWER(company_name) LIKE ? OR LOWER(job_role) LIKE ?)",
+			searchPattern,
+			searchPattern,
+		)
+	}
+
+	result := query.
 		Order("applied_date desc").
 		Find(&applications)
 
@@ -220,6 +244,16 @@ func UpdateApplication(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Applied date must be in YYYY-MM-DD format",
+		})
+		return
+	}
+
+	today := time.Now().Truncate(24 * time.Hour)
+	selectedDate := appliedDate.Truncate(24 * time.Hour)
+
+	if selectedDate.After(today) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Application date cannot be in the future",
 		})
 		return
 	}
