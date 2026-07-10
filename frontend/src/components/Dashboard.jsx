@@ -15,6 +15,29 @@ function formatDate(dateString) {
   return `${day}/${month}/${year}`;
 }
 
+function formatStatus(status) {
+  if (!status) return "-";
+
+  const normalized = status.toLowerCase();
+
+  if (
+    normalized === "technical interview 1" ||
+    normalized === "technical interview 2"
+  ) {
+    return "Technical Round";
+  }
+
+  return normalized
+    .split(" ")
+    .map((word) => {
+      if (word.toLowerCase() === "hr") {
+        return "HR";
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" ");
+}
+
 export default function Dashboard({ user, onLogout }) {
   const [applications, setApplications] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -170,28 +193,66 @@ export default function Dashboard({ user, onLogout }) {
     }
   };
 
-  const stats = {
-    total: applications.length,
-    applied: applications.filter((a) => a.status === "applied").length,
-    interviewScheduled: applications.filter(
-      (a) => a.status === "interview scheduled"
-    ).length,
-    interviewDone: applications.filter(
-      (a) => a.status === "interview done"
-    ).length,
-    selected: applications.filter((a) => a.status === "selected").length,
-    rejected: applications.filter((a) => a.status === "rejected").length,
-  };
+  const totalApplications = applications.length;
+
+  const technicalRoundCount = applications.filter((application) =>
+    [
+      "technical interview 1",
+      "technical interview 2",
+      "final/offer discussion",
+      "selected",
+    ].includes((application.status || "").toLowerCase())
+  ).length;
+
+  const selectedCount = applications.filter(
+    (application) => (application.status || "").toLowerCase() === "selected"
+  ).length;
+
+  const rejectedCount = applications.filter(
+    (application) => (application.status || "").toLowerCase() === "rejected"
+  ).length;
+
+  const withdrawnCount = applications.filter(
+    (application) => (application.status || "").toLowerCase() === "withdrawn"
+  ).length;
+
+  const summaryItems = [
+    {
+      label: "Applied",
+      value: totalApplications,
+      helper: "Total opportunities tracked",
+    },
+    {
+      label: "Technical Round",
+      value: technicalRoundCount,
+      helper: "Reached technical/final stage",
+    },
+    {
+      label: "Selected",
+      value: selectedCount,
+      helper: "Offers converted",
+    },
+    {
+      label: "Rejected",
+      value: rejectedCount,
+      helper: "Closed by employer",
+    },
+    {
+      label: "Withdrawn",
+      value: withdrawnCount,
+      helper: "You exited the process",
+    },
+  ];
 
   return (
     <div className="container">
-      <div className="header">
-        <div>
+      <div className="dashboard-top">
+        <div className="dashboard-heading">
           <h1>Job Tracker Dashboard</h1>
           <p className="welcome-text">Welcome, {user.name}</p>
         </div>
 
-        <div className="header-actions">
+        <div className="dashboard-top-actions">
           <button className="add-btn" onClick={openAddModal}>
             Add Application
           </button>
@@ -202,106 +263,113 @@ export default function Dashboard({ user, onLogout }) {
         </div>
       </div>
 
-      <div className="toolbar">
-        <input
-          type="text"
-          className="search-input"
-          placeholder="Search by company or role"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-
-        <select
-          className="sort-select"
-          value={sortOption}
-          onChange={(e) => setSortOption(e.target.value)}
-        >
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="company_asc">Company A-Z</option>
-          <option value="company_desc">Company Z-A</option>
-        </select>
-      </div>
-
-      <div className="stats-grid">
-        <div className="stat-card">
-          <h3>{stats.total}</h3>
-          <p>Total Applications</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>{stats.applied}</h3>
-          <p>Applied</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>{stats.interviewScheduled}</h3>
-          <p>Interview Scheduled</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>{stats.interviewDone}</h3>
-          <p>Interview Done</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>{stats.selected}</h3>
-          <p>Selected</p>
-        </div>
-
-        <div className="stat-card">
-          <h3>{stats.rejected}</h3>
-          <p>Rejected</p>
-        </div>
-      </div>
-
       {message && <div className="message">{message}</div>}
 
-      <table>
-        <thead>
-          <tr>
-            <th>Company</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Applied Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
+      <div className="dashboard-layout">
+        <aside className="dashboard-sidebar">
+          <div className="sidebar-card">
+            <div className="sidebar-card-header">
+              <h2>Pipeline Summary</h2>
+              <p>Quick view of how your applications are progressing</p>
+            </div>
 
-        <tbody>
-          {applications.length === 0 ? (
-            <tr>
-              <td colSpan="5" className="empty-row">
-                No applications found
-              </td>
-            </tr>
-          ) : (
-            applications.map((application) => (
-              <tr key={application.id}>
-                <td>{application.company_name}</td>
-                <td>{application.job_role}</td>
-                <td>{application.status}</td>
-                <td>{formatDate(application.applied_date)}</td>
-                <td>
-                  <button
-                    className="update-btn"
-                    onClick={() => openEditModal(application)}
-                  >
-                    Edit
-                  </button>
+            <div className="summary-stack">
+              {summaryItems.map((item) => (
+                <div className="summary-row" key={item.label}>
+                  <div className="summary-row-content">
+                    <span className="summary-row-label">{item.label}</span>
+                    <span className="summary-row-helper">{item.helper}</span>
+                  </div>
 
-                  <button
-                    className="delete-btn"
-                    onClick={() => deleteApplication(application.id)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+                  <div className="summary-row-value">{item.value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <section className="dashboard-main">
+          <div className="toolbar-card">
+            <div className="toolbar">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search by company or role"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+
+              <select
+                className="sort-select"
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="company_asc">Company A-Z</option>
+                <option value="company_desc">Company Z-A</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="table-card">
+            <div className="table-card-header">
+              <div>
+                <h2>Your Applications</h2>
+                <p>{applications.length} records in the current view</p>
+              </div>
+            </div>
+
+            <div className="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Company</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Applied Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {applications.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="empty-row">
+                        No applications found
+                      </td>
+                    </tr>
+                  ) : (
+                    applications.map((application) => (
+                      <tr key={application.id}>
+                        <td>{application.company_name}</td>
+                        <td>{application.job_role}</td>
+                        <td>{formatStatus(application.status)}</td>
+                        <td>{formatDate(application.applied_date)}</td>
+                        <td className="action-cell">
+                          <button
+                            className="update-btn"
+                            onClick={() => openEditModal(application)}
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            className="delete-btn"
+                            onClick={() => deleteApplication(application.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
 
       {showModal && (
         <ApplicationModal
