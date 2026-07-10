@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api";
 import ApplicationModal from "./ApplicationModal";
 
@@ -40,23 +40,38 @@ function formatStatus(status) {
 
 export default function Dashboard({ user, onLogout }) {
   const [applications, setApplications] = useState([]);
+  const [allApplications, setAllApplications] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingApplication, setEditingApplication] = useState(null);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState("newest");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const [form, setForm] = useState({
     company_name: "",
     job_role: "",
+    location: "",
     status: "applied",
     applied_date: "",
   });
 
+  const loadSummaryApplications = async () => {
+    try {
+      const response = await api.get("/applications");
+      setAllApplications(response.data);
+    } catch (error) {
+      console.error(error);
+      const errorMessage =
+        error.response?.data?.error || "Failed to load application summary";
+      setMessage(errorMessage);
+    }
+  };
+
   const loadApplications = async (
     searchValue = searchTerm,
-    sortValue = sortOption
+    sortValue = sortOption,
+    filterValue = statusFilter
   ) => {
     try {
       const params = {};
@@ -67,6 +82,10 @@ export default function Dashboard({ user, onLogout }) {
 
       if (sortValue) {
         params.sort = sortValue;
+      }
+
+      if (filterValue) {
+        params.status = filterValue;
       }
 
       const response = await api.get("/applications", { params });
@@ -81,13 +100,28 @@ export default function Dashboard({ user, onLogout }) {
     }
   };
 
+  const refreshDashboardData = async (
+    searchValue = searchTerm,
+    sortValue = sortOption,
+    filterValue = statusFilter
+  ) => {
+    await Promise.all([
+      loadSummaryApplications(),
+      loadApplications(searchValue, sortValue, filterValue),
+    ]);
+  };
+
+  useEffect(() => {
+    loadSummaryApplications();
+  }, []);
+
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      loadApplications(searchTerm, sortOption);
-    }, 400);
+      loadApplications(searchTerm, sortOption, statusFilter);
+    }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, sortOption]);
+  }, [searchTerm, sortOption, statusFilter]);
 
   const openAddModal = () => {
     setEditingApplication(null);
@@ -95,6 +129,7 @@ export default function Dashboard({ user, onLogout }) {
     setForm({
       company_name: "",
       job_role: "",
+      location: "",
       status: "applied",
       applied_date: "",
     });
@@ -108,6 +143,7 @@ export default function Dashboard({ user, onLogout }) {
     setForm({
       company_name: application.company_name || "",
       job_role: application.job_role || "",
+      location: application.location || "",
       status: application.status || "applied",
       applied_date: application.applied_date
         ? application.applied_date.slice(0, 10)
@@ -124,6 +160,7 @@ export default function Dashboard({ user, onLogout }) {
     setForm({
       company_name: "",
       job_role: "",
+      location: "",
       status: "applied",
       applied_date: "",
     });
@@ -136,6 +173,7 @@ export default function Dashboard({ user, onLogout }) {
     const payload = {
       company_name: form.company_name.trim(),
       job_role: form.job_role.trim(),
+      location: form.location.trim(),
       status: form.status,
       applied_date: form.applied_date,
     };
@@ -160,7 +198,7 @@ export default function Dashboard({ user, onLogout }) {
       }
 
       closeModal();
-      loadApplications(searchTerm, sortOption);
+      await refreshDashboardData(searchTerm, sortOption, statusFilter);
     } catch (error) {
       console.error(error);
 
@@ -181,7 +219,7 @@ export default function Dashboard({ user, onLogout }) {
     try {
       await api.delete(`/applications/${id}`);
       setMessage("Application deleted successfully");
-      loadApplications(searchTerm, sortOption);
+      await refreshDashboardData(searchTerm, sortOption, statusFilter);
     } catch (error) {
       console.error(error);
 
@@ -192,165 +230,176 @@ export default function Dashboard({ user, onLogout }) {
     }
   };
 
+  const handleStatusFilter = (filterKey) => {
+    setStatusFilter((prev) => (prev === filterKey ? "" : filterKey));
+  };
+
+  const clearAllFilters = async () => {
+    setSearchTerm("");
+    setSortOption("newest");
+    setStatusFilter("");
+    await refreshDashboardData("", "newest", "");
+  };
+
   const summaryStats = {
-    applied: applications.length,
-    technicalRound: applications.filter(
+    applied: allApplications.filter(
+      (a) =>
+        a.status !== "selected" &&
+        a.status !== "rejected" &&
+        a.status !== "withdrawn"
+    ).length,
+    technicalRound: allApplications.filter(
       (a) =>
         a.status === "technical interview 1" ||
         a.status === "technical interview 2"
     ).length,
-    selected: applications.filter((a) => a.status === "selected").length,
-    rejected: applications.filter((a) => a.status === "rejected").length,
-    withdrawn: applications.filter((a) => a.status === "withdrawn").length,
-  };
-
-  const filteredApplications = useMemo(() => {
-    if (statusFilter === "all") {
-      return applications;
-    }
-
-    if (statusFilter === "selected") {
-      return applications.filter((a) => a.status === "selected");
-    }
-
-    if (statusFilter === "rejected") {
-      return applications.filter((a) => a.status === "rejected");
-    }
-
-    if (statusFilter === "applied") {
-      return applications;
-    }
-
-    return applications;
-  }, [applications, statusFilter]);
-
-  const toggleStatusFilter = (filterName) => {
-    setStatusFilter((current) => (current === filterName ? "all" : filterName));
+    selected: allApplications.filter((a) => a.status === "selected").length,
+    rejected: allApplications.filter((a) => a.status === "rejected").length,
+    withdrawn: allApplications.filter((a) => a.status === "withdrawn").length,
   };
 
   return (
     <div className="container">
+      <div className="dashboard-top">
+        <div className="dashboard-heading">
+          <h1>Job Tracker Dashboard</h1>
+          <p className="welcome-text">Welcome, {user.name}</p>
+        </div>
+
+        <div className="dashboard-top-actions">
+          <button className="add-btn" onClick={openAddModal}>
+            Add Application
+          </button>
+
+          <button className="logout-btn" onClick={onLogout}>
+            Logout
+          </button>
+        </div>
+      </div>
+
       <div className="dashboard-layout">
         <aside className="dashboard-sidebar">
-          <div className="sidebar-card">
-            <div className="sidebar-card-header">
-              <h2>Application Summary</h2>
-              <p>Track your current pipeline at a glance</p>
+          <div className="summary-panel">
+            <div className="summary-panel-header">
+              <h3>Application Summary</h3>
+              <p>Quick view of your pipeline</p>
             </div>
 
             <div className="summary-list">
               <button
-                type="button"
-                className={`summary-item summary-item-clickable ${
+                className={`summary-item summary-item-button ${
                   statusFilter === "applied" ? "summary-item-active" : ""
                 }`}
-                onClick={() => toggleStatusFilter("applied")}
+                onClick={() => handleStatusFilter("applied")}
+                type="button"
               >
-                <div className="summary-item-left">
-                  <span className="summary-item-label">Applied</span>
-                  <span className="summary-item-subtext">
-                    Total opportunities added
-                  </span>
+                <div className="summary-item-text">
+                  <span className="summary-label">Applied</span>
+                  <span className="summary-hint">Active opportunities</span>
                 </div>
-                <span className="summary-item-value">
-                  {summaryStats.applied}
-                </span>
+                <span className="summary-value">{summaryStats.applied}</span>
               </button>
 
               <div className="summary-item">
-                <div className="summary-item-left">
-                  <span className="summary-item-label">Technical Round</span>
-                  <span className="summary-item-subtext">
-                    Interview round 1 or 2
+                <div className="summary-item-text">
+                  <span className="summary-label">Technical Round</span>
+                  <span className="summary-hint">
+                    Round 1 + Round 2 combined
                   </span>
                 </div>
-                <span className="summary-item-value">
+                <span className="summary-value">
                   {summaryStats.technicalRound}
                 </span>
               </div>
 
               <button
-                type="button"
-                className={`summary-item summary-item-clickable ${
+                className={`summary-item summary-item-button ${
                   statusFilter === "selected" ? "summary-item-active" : ""
                 }`}
-                onClick={() => toggleStatusFilter("selected")}
+                onClick={() => handleStatusFilter("selected")}
+                type="button"
               >
-                <div className="summary-item-left">
-                  <span className="summary-item-label">Selected</span>
-                  <span className="summary-item-subtext">
-                    Final positive outcomes
-                  </span>
+                <div className="summary-item-text">
+                  <span className="summary-label">Selected</span>
+                  <span className="summary-hint">Final successful outcomes</span>
                 </div>
-                <span className="summary-item-value">
-                  {summaryStats.selected}
-                </span>
+                <span className="summary-value">{summaryStats.selected}</span>
+              </button>
+
+              <button
+                className={`summary-item summary-item-button ${
+                  statusFilter === "rejected" ? "summary-item-active" : ""
+                }`}
+                onClick={() => handleStatusFilter("rejected")}
+                type="button"
+              >
+                <div className="summary-item-text">
+                  <span className="summary-label">Rejected</span>
+                  <span className="summary-hint">Applications closed</span>
+                </div>
+                <span className="summary-value">{summaryStats.rejected}</span>
+              </button>
+
+              <div className="summary-item">
+                <div className="summary-item-text">
+                  <span className="summary-label">Withdrawn</span>
+                  <span className="summary-hint">Applications you dropped</span>
+                </div>
+                <span className="summary-value">{summaryStats.withdrawn}</span>
+              </div>
+            </div>
+
+            <div className="summary-filter-actions">
+              <button
+                type="button"
+                className={`filter-chip ${
+                  statusFilter === "applied" ? "filter-chip-active" : ""
+                }`}
+                onClick={() => handleStatusFilter("applied")}
+              >
+                Applied
               </button>
 
               <button
                 type="button"
-                className={`summary-item summary-item-clickable ${
-                  statusFilter === "rejected" ? "summary-item-active" : ""
+                className={`filter-chip ${
+                  statusFilter === "selected" ? "filter-chip-active" : ""
                 }`}
-                onClick={() => toggleStatusFilter("rejected")}
+                onClick={() => handleStatusFilter("selected")}
               >
-                <div className="summary-item-left">
-                  <span className="summary-item-label">Rejected</span>
-                  <span className="summary-item-subtext">
-                    Applications closed negatively
-                  </span>
-                </div>
-                <span className="summary-item-value">
-                  {summaryStats.rejected}
-                </span>
+                Selected
               </button>
 
-              <div className="summary-item">
-                <div className="summary-item-left">
-                  <span className="summary-item-label">Withdrawn</span>
-                  <span className="summary-item-subtext">
-                    You chose not to continue
-                  </span>
-                </div>
-                <span className="summary-item-value">
-                  {summaryStats.withdrawn}
-                </span>
-              </div>
+              <button
+                type="button"
+                className={`filter-chip ${
+                  statusFilter === "rejected" ? "filter-chip-active" : ""
+                }`}
+                onClick={() => handleStatusFilter("rejected")}
+              >
+                Rejected
+              </button>
             </div>
 
-            <div className="sidebar-note">
-              <p>
-                Click <strong>Applied</strong>, <strong>Selected</strong>, or{" "}
-                <strong>Rejected</strong> to filter the table.
-              </p>
-            </div>
+            {(statusFilter || searchTerm || sortOption !== "newest") && (
+              <button
+                type="button"
+                className="clear-filters-btn"
+                onClick={clearAllFilters}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         </aside>
 
-        <main className="dashboard-main">
-          <div className="dashboard-top">
-            <div className="dashboard-heading">
-              <h1>Job Tracker Dashboard</h1>
-              <p className="welcome-text">Welcome, {user.name}</p>
-            </div>
-
-            <div className="dashboard-top-actions">
-              <button className="add-btn" onClick={openAddModal}>
-                Add Application
-              </button>
-
-              <button className="logout-btn" onClick={onLogout}>
-                Logout
-              </button>
-            </div>
-          </div>
-
+        <section className="dashboard-main">
           <div className="toolbar-card">
             <div className="toolbar">
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search by company or role"
+                placeholder="Search by company, role, or location"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -368,25 +417,6 @@ export default function Dashboard({ user, onLogout }) {
             </div>
           </div>
 
-          {statusFilter !== "all" && (
-            <div className="active-filter-bar">
-              <span className="active-filter-text">
-                Showing{" "}
-                {statusFilter === "applied"
-                  ? "all applied applications"
-                  : `${statusFilter} applications`}
-              </span>
-
-              <button
-                type="button"
-                className="clear-filter-btn"
-                onClick={() => setStatusFilter("all")}
-              >
-                Clear filter
-              </button>
-            </div>
-          )}
-
           {message && <div className="message">{message}</div>}
 
           <div className="table-card">
@@ -396,6 +426,7 @@ export default function Dashboard({ user, onLogout }) {
                   <tr>
                     <th>Company</th>
                     <th>Role</th>
+                    <th>Location</th>
                     <th>Status</th>
                     <th>Applied Date</th>
                     <th>Actions</th>
@@ -403,17 +434,18 @@ export default function Dashboard({ user, onLogout }) {
                 </thead>
 
                 <tbody>
-                  {filteredApplications.length === 0 ? (
+                  {applications.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="empty-row">
+                      <td colSpan="6" className="empty-row">
                         No applications found
                       </td>
                     </tr>
                   ) : (
-                    filteredApplications.map((application) => (
+                    applications.map((application) => (
                       <tr key={application.id}>
                         <td>{application.company_name}</td>
                         <td>{application.job_role}</td>
+                        <td>{application.location || "-"}</td>
                         <td>{formatStatus(application.status)}</td>
                         <td>{formatDate(application.applied_date)}</td>
                         <td className="action-cell">
@@ -438,7 +470,7 @@ export default function Dashboard({ user, onLogout }) {
               </table>
             </div>
           </div>
-        </main>
+        </section>
       </div>
 
       {showModal && (

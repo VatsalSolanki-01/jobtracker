@@ -1,12 +1,12 @@
 const APPLICATION_STATUSES = [
-  { value: "applied", label: "Applied" },
-  { value: "hr screening", label: "HR Screening" },
-  { value: "technical interview 1", label: "Technical Interview 1" },
-  { value: "technical interview 2", label: "Technical Interview 2" },
-  { value: "final/offer discussion", label: "Final / Offer Discussion" },
-  { value: "selected", label: "Selected" },
-  { value: "rejected", label: "Rejected" },
-  { value: "withdrawn", label: "Withdrawn" },
+  "applied",
+  "hr screening",
+  "technical interview 1",
+  "technical interview 2",
+  "final/offer discussion",
+  "selected",
+  "rejected",
+  "withdrawn",
 ];
 
 export default function ApplicationModal({
@@ -40,13 +40,20 @@ export default function ApplicationModal({
             onChange={(e) => setForm({ ...form, job_role: e.target.value })}
           />
 
+          <input
+            type="text"
+            placeholder="Location (e.g. Pune, Ahmedabad, Remote)"
+            value={form.location}
+            onChange={(e) => setForm({ ...form, location: e.target.value })}
+          />
+
           <select
             value={form.status}
             onChange={(e) => setForm({ ...form, status: e.target.value })}
           >
             {APPLICATION_STATUSES.map((status) => (
-              <option key={status.value} value={status.value}>
-                {status.label}
+              <option key={status} value={status}>
+                {status}
               </option>
             ))}
           </select>

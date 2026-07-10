@@ -14,24 +14,9 @@ import (
 type ApplicationInput struct {
 	CompanyName string `json:"company_name"`
 	JobRole     string `json:"job_role"`
+	Location    string `json:"location"`
 	Status      string `json:"status"`
 	AppliedDate string `json:"applied_date"`
-}
-
-var allowedStatuses = map[string]bool{
-	"applied":                  true,
-	"hr screening":             true,
-	"technical interview 1":    true,
-	"technical interview 2":    true,
-	"final/offer discussion":   true,
-	"selected":                 true,
-	"rejected":                 true,
-	"withdrawn":                true,
-}
-
-func isValidStatus(status string) bool {
-	_, exists := allowedStatuses[status]
-	return exists
 }
 
 func CreateApplication(c *gin.Context) {
@@ -62,19 +47,13 @@ func CreateApplication(c *gin.Context) {
 
 	input.CompanyName = strings.TrimSpace(input.CompanyName)
 	input.JobRole = strings.TrimSpace(input.JobRole)
-	input.Status = strings.TrimSpace(strings.ToLower(input.Status))
+	input.Location = strings.TrimSpace(input.Location)
+	input.Status = strings.TrimSpace(input.Status)
 	input.AppliedDate = strings.TrimSpace(input.AppliedDate)
 
 	if input.CompanyName == "" || input.JobRole == "" || input.Status == "" || input.AppliedDate == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Company name, job role, status, and applied date are required",
-		})
-		return
-	}
-
-	if !isValidStatus(input.Status) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid application status",
 		})
 		return
 	}
@@ -100,6 +79,7 @@ func CreateApplication(c *gin.Context) {
 	application := models.Application{
 		CompanyName: input.CompanyName,
 		JobRole:     input.JobRole,
+		Location:    input.Location,
 		Status:      input.Status,
 		UserID:      userID,
 		AppliedDate: &appliedDate,
@@ -133,7 +113,8 @@ func GetApplications(c *gin.Context) {
 	}
 
 	search := strings.TrimSpace(c.Query("search"))
-	sortBy := strings.TrimSpace(c.Query("sort"))
+	sortOption := strings.TrimSpace(c.Query("sort"))
+	statusFilter := strings.TrimSpace(c.Query("status"))
 
 	var applications []models.Application
 
@@ -141,25 +122,48 @@ func GetApplications(c *gin.Context) {
 
 	if search != "" {
 		searchPattern := "%" + strings.ToLower(search) + "%"
+
 		query = query.Where(
-			"(LOWER(company_name) LIKE ? OR LOWER(job_role) LIKE ?)",
+			`(
+				LOWER(company_name) LIKE ? OR
+				LOWER(job_role) LIKE ? OR
+				LOWER(location) LIKE ?
+			)`,
+			searchPattern,
 			searchPattern,
 			searchPattern,
 		)
 	}
 
-	switch sortBy {
-	case "company_asc":
-		query = query.Order("company_name asc")
-	case "company_desc":
-		query = query.Order("company_name desc")
-	case "date_oldest":
+	if statusFilter != "" {
+		switch statusFilter {
+		case "applied":
+			query = query.Where("status NOT IN ?", []string{
+				"selected",
+				"rejected",
+				"withdrawn",
+			})
+		case "selected":
+			query = query.Where("status = ?", "selected")
+		case "rejected":
+			query = query.Where("status = ?", "rejected")
+		}
+	}
+
+	switch sortOption {
+	case "oldest":
 		query = query.Order("applied_date asc")
+	case "company_asc":
+		query = query.Order("LOWER(company_name) asc")
+	case "company_desc":
+		query = query.Order("LOWER(company_name) desc")
 	default:
 		query = query.Order("applied_date desc")
 	}
 
-	if err := query.Find(&applications).Error; err != nil {
+	result := query.Find(&applications)
+
+	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to fetch applications",
 		})
@@ -259,19 +263,13 @@ func UpdateApplication(c *gin.Context) {
 
 	input.CompanyName = strings.TrimSpace(input.CompanyName)
 	input.JobRole = strings.TrimSpace(input.JobRole)
-	input.Status = strings.TrimSpace(strings.ToLower(input.Status))
+	input.Location = strings.TrimSpace(input.Location)
+	input.Status = strings.TrimSpace(input.Status)
 	input.AppliedDate = strings.TrimSpace(input.AppliedDate)
 
 	if input.CompanyName == "" || input.JobRole == "" || input.Status == "" || input.AppliedDate == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Company name, job role, status, and applied date are required",
-		})
-		return
-	}
-
-	if !isValidStatus(input.Status) {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid application status",
 		})
 		return
 	}
@@ -296,6 +294,7 @@ func UpdateApplication(c *gin.Context) {
 
 	application.CompanyName = input.CompanyName
 	application.JobRole = input.JobRole
+	application.Location = input.Location
 	application.Status = input.Status
 	application.AppliedDate = &appliedDate
 
