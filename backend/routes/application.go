@@ -18,6 +18,22 @@ type ApplicationInput struct {
 	AppliedDate string `json:"applied_date"`
 }
 
+var allowedStatuses = map[string]bool{
+	"applied":                  true,
+	"hr screening":             true,
+	"technical interview 1":    true,
+	"technical interview 2":    true,
+	"final/offer discussion":   true,
+	"selected":                 true,
+	"rejected":                 true,
+	"withdrawn":                true,
+}
+
+func isValidStatus(status string) bool {
+	_, exists := allowedStatuses[status]
+	return exists
+}
+
 func CreateApplication(c *gin.Context) {
 	userIDValue, exists := c.Get("userID")
 	if !exists {
@@ -46,12 +62,19 @@ func CreateApplication(c *gin.Context) {
 
 	input.CompanyName = strings.TrimSpace(input.CompanyName)
 	input.JobRole = strings.TrimSpace(input.JobRole)
-	input.Status = strings.TrimSpace(input.Status)
+	input.Status = strings.TrimSpace(strings.ToLower(input.Status))
 	input.AppliedDate = strings.TrimSpace(input.AppliedDate)
 
 	if input.CompanyName == "" || input.JobRole == "" || input.Status == "" || input.AppliedDate == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Company name, job role, status, and applied date are required",
+		})
+		return
+	}
+
+	if !isValidStatus(input.Status) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid application status",
 		})
 		return
 	}
@@ -126,12 +149,12 @@ func GetApplications(c *gin.Context) {
 	}
 
 	switch sortBy {
-	case "oldest":
-		query = query.Order("applied_date asc")
 	case "company_asc":
-		query = query.Order("LOWER(company_name) asc")
+		query = query.Order("company_name asc")
 	case "company_desc":
-		query = query.Order("LOWER(company_name) desc")
+		query = query.Order("company_name desc")
+	case "date_oldest":
+		query = query.Order("applied_date asc")
 	default:
 		query = query.Order("applied_date desc")
 	}
@@ -236,12 +259,19 @@ func UpdateApplication(c *gin.Context) {
 
 	input.CompanyName = strings.TrimSpace(input.CompanyName)
 	input.JobRole = strings.TrimSpace(input.JobRole)
-	input.Status = strings.TrimSpace(input.Status)
+	input.Status = strings.TrimSpace(strings.ToLower(input.Status))
 	input.AppliedDate = strings.TrimSpace(input.AppliedDate)
 
 	if input.CompanyName == "" || input.JobRole == "" || input.Status == "" || input.AppliedDate == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Company name, job role, status, and applied date are required",
+		})
+		return
+	}
+
+	if !isValidStatus(input.Status) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid application status",
 		})
 		return
 	}
